@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Memory Flip Game 🧠</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      color: #fff;
+    }
+
+    h1 {
+      margin-bottom: 10px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .stats {
+      margin: 10px;
+      font-size: 18px;
+    }
+
+    .game-board {
+      display: grid;
+      grid-template-columns: repeat(4, 100px);
+      grid-gap: 15px;
+      perspective: 1000px;
+    }
+
+    .card {
+      width: 100px;
+      height: 120px;
+      cursor: pointer;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.6s;
+    }
+
+    .card.flip {
+      transform: rotateY(180deg);
+    }
+
+    .card .front,
+    .card .back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 12px;
+      backface-visibility: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+    }
+
+    .card .front {
+      background: #fff;
+      color: #333;
+      transform: rotateY(180deg);
+    }
+
+    .card .back {
+      background: linear-gradient(135deg, #ff9a9e, #fad0c4);
+    }
+
+    .hidden {
+      visibility: hidden;
+    }
+
+    button {
+      margin-top: 15px;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      background: #ff758c;
+      color: #fff;
+      font-size: 16px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      background: #ff4e69;
+    }
+  </style>
+</head>
+<body>
+  <h1>Memory Flip Game 🧠</h1>
+  <div class="stats">
+    ⏱️ Time: <span id="timer">0</span>s | 🎯 Moves: <span id="moves">0</span>
+  </div>
+  <div class="game-board" id="board"></div>
+  <button onclick="startGame()">Restart 🔄</button>
+
+  <script>
+    const emojis = ["🍎","🍌","🍓","🍇","🍒","🍍","🥝","🥥"];
+    let board = document.getElementById("board");
+    let firstCard = null;
+    let secondCard = null;
+    let lock = false;
+    let moves = 0;
+    let timer = 0;
+    let timerInterval;
+
+    function startGame() {
+      board.innerHTML = "";
+      clearInterval(timerInterval);
+      timer = 0;
+      moves = 0;
+      document.getElementById("timer").textContent = timer;
+      document.getElementById("moves").textContent = moves;
+
+      let cardsArray = [...emojis, ...emojis]
+        .sort(() => 0.5 - Math.random());
+
+      cardsArray.forEach(emoji => {
+        const card = document.createElement("div");
+        card.classList.add("card");
+        card.innerHTML = `
+          <div class="front">${emoji}</div>
+          <div class="back">?</div>
+        `;
+        card.addEventListener("click", () => flipCard(card, emoji));
+        board.appendChild(card);
+      });
+
+      timerInterval = setInterval(() => {
+        timer++;
+        document.getElementById("timer").textContent = timer;
+      }, 1000);
+    }
+
+    function flipCard(card, emoji) {
+      if (lock || card.classList.contains("flip")) return;
+      card.classList.add("flip");
+      if (!firstCard) {
+        firstCard = { card, emoji };
+      } else {
+        secondCard = { card, emoji };
+        checkMatch();
+      }
+    }
+
+    function checkMatch() {
+      moves++;
+      document.getElementById("moves").textContent = moves;
+      if (firstCard.emoji === secondCard.emoji) {
+        firstCard.card.style.pointerEvents = "none";
+        secondCard.card.style.pointerEvents = "none";
+        resetSelection();
+        checkWin();
+      } else {
+        lock = true;
+        setTimeout(() => {
+          firstCard.card.classList.remove("flip");
+          secondCard.card.classList.remove("flip");
+          resetSelection();
+        }, 1000);
+      }
+    }
+
+    function resetSelection() {
+      [firstCard, secondCard] = [null, null];
+      lock = false;
+    }
+
+    function checkWin() {
+      const flippedCards = document.querySelectorAll(".card.flip").length;
+      if (flippedCards === emojis.length * 2) {
+        clearInterval(timerInterval);
+        setTimeout(() => {
+          alert(`🎉 You won in ${moves} moves and ${timer} seconds!`);
+        }, 300);
+      }
+    }
+
+    startGame();
+  </script>
+</body>
+</html>
